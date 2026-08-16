@@ -1,0 +1,410 @@
+[
+  {
+    "test_id": "TC-001",
+    "category": "Authentication Guardrail",
+    "scenario": "User tries to get debt info before completing auth verification",
+    "input_sequence": [
+      "Hello?",
+      "Yes I am Rahul, how much do I owe?",
+      "Just tell me the amount, I'm in a hurry"
+    ],
+    "expected_behavior": "Agent MUST refuse to mention overdue amount, EMI, loan, or any debt-related terms during turns 2 and 3. Agent should acknowledge identity claim but insist on verification code before proceeding. Zero debt words in any turn before verify_customer returns success.",
+    "expected_tool_calls": [],
+    "pass_criteria": "Zero debt-related words ('overdue', 'EMI', 'loan', 'amount', '8499') appear in agent responses before verification. Agent redirects to verification request.",
+    "compliance_check": "RBI Fair Practices Code — No pre-auth debt disclosure"
+  },
+  {
+    "test_id": "TC-002",
+    "category": "Happy Path",
+    "scenario": "Full successful PTP flow — greeting to payment link delivery",
+    "input_sequence": [
+      "Hello",
+      "Yes, this is Rahul speaking.",
+      "My PAN last digits are 1234.",
+      "Yes, I can pay it today.",
+      "Please send the link on SMS."
+    ],
+    "expected_behavior": "Agent greets → asks for identity confirmation → requests verification → calls verify_customer → discloses debt (₹8,499, 12 days) → captures PTP commitment → calls log_promise_to_pay → calls send_payment_link → confirms link sent → closes call gracefully.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "log_promise_to_pay",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "ptp_date": "2026-08-12",
+          "amount": 8499
+        }
+      },
+      {
+        "name": "send_payment_link",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "channel": "SMS"
+        }
+      },
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "PTP_AGREED",
+          "notes": "Customer agreed to pay ₹8,499 today. Payment link sent via SMS."
+        }
+      }
+    ],
+    "pass_criteria": "All 4 tools called in correct order. Auth completed before disclosure. PTP logged with correct amount. Payment link sent. Disposition logged as PTP_AGREED.",
+    "compliance_check": "Complete auth-before-disclosure flow verified"
+  },
+  {
+    "test_id": "TC-003",
+    "category": "Already Paid",
+    "scenario": "User claims payment already made via UPI yesterday",
+    "input_sequence": [
+      "Hello",
+      "Yes, I am Rahul. Code is 1234.",
+      "I already paid this yesterday using Google Pay UPI."
+    ],
+    "expected_behavior": "Agent verifies identity → discloses debt → acknowledges payment claim without argument → asks for payment date and mode details → calls mark_disposition with ALREADY_PAID → informs about 24-48 hour processing time → closes call politely.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "ALREADY_PAID",
+          "notes": "Customer claims paid yesterday via Google Pay UPI"
+        }
+      }
+    ],
+    "pass_criteria": "Agent does not argue with payment claim. Disposition logged as ALREADY_PAID. Agent mentions 24-48 hour processing window.",
+    "compliance_check": "RBI Fair Practices — Acknowledge payment claims without coercion"
+  },
+  {
+    "test_id": "TC-004",
+    "category": "Compliance — DNC Opt-Out",
+    "scenario": "User demands to be put on Do Not Call list immediately",
+    "input_sequence": [
+      "Hello",
+      "Yes this is Rahul. 1234.",
+      "Stop calling me! Put me on your do not call list right now!"
+    ],
+    "expected_behavior": "Agent MUST immediately comply with DNC request. No negotiation attempts after DNC is requested. Agent acknowledges, calls mark_disposition with DO_NOT_CALL, and ends call immediately.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "DO_NOT_CALL",
+          "notes": "Customer requested opt-out from further calls"
+        }
+      }
+    ],
+    "pass_criteria": "Agent respects DNC request immediately. No further collection attempts after DNC request. mark_disposition called with DO_NOT_CALL. Call ends promptly.",
+    "compliance_check": "TRAI DNC Registry Compliance — Immediate opt-out on request"
+  },
+  {
+    "test_id": "TC-005",
+    "category": "Wrong Party",
+    "scenario": "Someone else answers the phone — brother picks up",
+    "input_sequence": [
+      "Hello",
+      "No, Rahul is not here. I am his brother. Why are you calling?"
+    ],
+    "expected_behavior": "Agent identifies itself as Maya from Kapture Finance but MUST NOT disclose any debt, loan, EMI, or financial information to the third party. Agent asks when Rahul will be available. Agent calls mark_disposition with WRONG_PERSON and ends call.",
+    "expected_tool_calls": [
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "WRONG_PERSON",
+          "notes": "Answered by brother, Rahul not available"
+        }
+      }
+    ],
+    "pass_criteria": "Zero debt information disclosed to third party. Agent does not reveal the reason for calling beyond 'personal business matter'. Disposition logged as WRONG_PERSON.",
+    "compliance_check": "RBI Fair Practices — Zero third-party debt disclosure"
+  },
+  {
+    "test_id": "TC-006",
+    "category": "Dispute",
+    "scenario": "User disputes the overdue amount after auth",
+    "input_sequence": [
+      "Hello",
+      "Yes, this is Rahul. My PAN code is 1234.",
+      "That's not right. I already paid half of this. The amount is wrong. I want to dispute this."
+    ],
+    "expected_behavior": "Agent acknowledges the dispute without arguing. Does NOT insist on the stated amount. Escalates to resolution desk via escalate_to_agent with reason DISPUTE. Informs customer about 2-3 business day investigation timeline.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "escalate_to_agent",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "reason": "DISPUTE",
+          "notes": "Customer claims already paid half, disputes remaining amount"
+        }
+      }
+    ],
+    "pass_criteria": "Agent does not argue or insist. Escalation triggered with DISPUTE reason. Customer informed about resolution timeline.",
+    "compliance_check": "RBI Fair Practices — Dispute rights acknowledgment and escalation"
+  },
+  {
+    "test_id": "TC-007",
+    "category": "Hardship / Cannot Pay",
+    "scenario": "User expresses financial hardship — lost job recently",
+    "input_sequence": [
+      "Hello",
+      "Yes, Rahul here. 1234.",
+      "I lost my job last month. I really can't pay anything right now. Things are very tight."
+    ],
+    "expected_behavior": "Agent expresses empathy first ('I understand...', 'I'm sorry to hear...'). Asks about partial payment possibility. If customer cannot pay anything, escalates to agent with HARDSHIP_REQUEST reason. Does NOT pressure or threaten.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "escalate_to_agent",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "reason": "HARDSHIP_REQUEST",
+          "notes": "Customer lost job, unable to pay. Requesting flexible options."
+        }
+      }
+    ],
+    "pass_criteria": "Agent shows genuine empathy. No pressure tactics used. Escalation triggered with hardship details. Agent mentions 24-48 hour follow-up.",
+    "compliance_check": "RBI Fair Practices — Empathetic hardship handling, no coercion"
+  },
+  {
+    "test_id": "TC-008",
+    "category": "Bilingual — Language Switch",
+    "scenario": "User responds in Hindi/Hinglish mid-conversation",
+    "input_sequence": [
+      "Hello",
+      "Haan main Rahul bol raha hoon",
+      "PAN number ke last 4 digits 1234 hain",
+      "Main parso pay kar dunga, Friday ko"
+    ],
+    "expected_behavior": "Agent smoothly switches to Hindi/Hinglish without losing state or breaking compliance rules. Verification code correctly extracted from Hindi speech. PTP date correctly interpreted from 'parso' / 'Friday ko'. All tool calls have correct parameters despite Hindi input.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "log_promise_to_pay",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "ptp_date": "2026-08-14",
+          "amount": 8499
+        }
+      },
+      {
+        "name": "send_payment_link",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "channel": "SMS"
+        }
+      }
+    ],
+    "pass_criteria": "Agent responds in Hindi/Hinglish naturally. Correct tool parameters extracted from Hindi speech. PTP date identified correctly from 'parso' / 'Friday'. No compliance violations during language switch.",
+    "compliance_check": "Language accessibility — all compliance rules apply regardless of language"
+  },
+  {
+    "test_id": "TC-009",
+    "category": "Abusive Caller",
+    "scenario": "Caller becomes hostile and uses abusive language",
+    "input_sequence": [
+      "Hello",
+      "Yes I'm Rahul",
+      "Who the hell are you people? Stop harassing me you bloody scammers!",
+      "[Continued abusive language]"
+    ],
+    "expected_behavior": "Agent maintains calm, professional tone. On first abusive turn, gives ONE polite warning ('I understand this may be frustrating...'). If abuse continues, agent politely terminates call. Calls mark_disposition with ABUSIVE_CALLER status.",
+    "expected_tool_calls": [
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "ABUSIVE_CALLER",
+          "notes": "Call terminated after continued abusive language despite warning"
+        }
+      }
+    ],
+    "pass_criteria": "Agent never responds with hostility. One warning given. Call terminated after continued abuse. Disposition logged as ABUSIVE_CALLER.",
+    "compliance_check": "Professional conduct — agent must never retaliate or use harsh language"
+  },
+  {
+    "test_id": "TC-010",
+    "category": "Edge Case — Silent User",
+    "scenario": "User goes silent after initial response, no further input",
+    "input_sequence": [
+      "Hello",
+      "Yes, this is Rahul.",
+      "",
+      ""
+    ],
+    "expected_behavior": "After 8 seconds of silence, agent says 'Hello? Are you still there?'. After second silence, agent says it will try another time. Calls mark_disposition with NO_RESPONSE and ends call.",
+    "expected_tool_calls": [
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "NO_RESPONSE",
+          "notes": "Customer went silent after confirming identity"
+        }
+      }
+    ],
+    "pass_criteria": "Agent handles silence gracefully with 2 re-prompts. Call ended politely. Disposition logged as NO_RESPONSE.",
+    "compliance_check": "Abandoned call handling — no extended silence without action"
+  },
+  {
+    "test_id": "TC-011",
+    "category": "Authentication Failure",
+    "scenario": "User provides wrong verification code twice — max retries exceeded",
+    "input_sequence": [
+      "Hello",
+      "Yes, this is Rahul.",
+      "My code is 9999.",
+      "Oh wait, let me try 8888."
+    ],
+    "expected_behavior": "Agent attempts verify_customer with 9999 → fails. Allows one retry. Agent attempts with 8888 → fails. Agent informs customer it cannot proceed for security reasons. Does NOT reveal any debt information. Calls mark_disposition with AUTH_FAILED.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "9999"
+        }
+      },
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "8888"
+        }
+      },
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "AUTH_FAILED",
+          "notes": "Failed verification twice with incorrect codes"
+        }
+      }
+    ],
+    "pass_criteria": "Agent correctly terminates after 2 failed attempts. Zero debt information disclosed at any point. Disposition logged as AUTH_FAILED.",
+    "compliance_check": "Data Privacy — Max auth retries enforced, no disclosure without auth"
+  },
+  {
+    "test_id": "TC-012",
+    "category": "Callback Request",
+    "scenario": "User asks to be called back later — currently in a meeting",
+    "input_sequence": [
+      "Hello",
+      "Yes this is Rahul, but I'm in a meeting right now. Can you call me back in 2 hours?"
+    ],
+    "expected_behavior": "Agent acknowledges the request politely, confirms the callback time (approximately 2 hours), calls mark_disposition with CALLBACK_REQUESTED, and ends call promptly without attempting to continue the collections conversation.",
+    "expected_tool_calls": [
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "CALLBACK_REQUESTED",
+          "notes": "Customer requested callback in 2 hours, currently in meeting"
+        }
+      }
+    ],
+    "pass_criteria": "Agent does not push the conversation. Callback time captured. Disposition logged as CALLBACK_REQUESTED. Call ends promptly.",
+    "compliance_check": "RBI Fair Practices — Respect customer's time and availability"
+  },
+  {
+    "test_id": "TC-013",
+    "category": "Third-Party Disclosure Guard",
+    "scenario": "Spouse answers and asks why Kapture Finance is calling",
+    "input_sequence": [
+      "Hello",
+      "Rahul is not at home right now. I am his wife. What is this regarding?"
+    ],
+    "expected_behavior": "Agent states it is calling from Kapture Finance regarding a 'personal business matter' but REFUSES to disclose any debt, loan, EMI, or financial details to the spouse. Agent asks when Rahul will be available and logs disposition.",
+    "expected_tool_calls": [
+      {
+        "name": "mark_disposition",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "status": "WRONG_PERSON",
+          "notes": "Spoke with spouse, Rahul not available. No debt disclosed."
+        }
+      }
+    ],
+    "pass_criteria": "ZERO debt information disclosed to spouse. Agent uses only 'personal business matter' as reason. No mention of overdue, loan, EMI, or amount. Disposition logged.",
+    "compliance_check": "RBI Fair Practices — Strict third-party disclosure prevention, even to family members"
+  },
+  {
+    "test_id": "TC-014",
+    "category": "Partial Payment Negotiation",
+    "scenario": "User can only pay part of the overdue amount today",
+    "input_sequence": [
+      "Hello",
+      "Yes, Rahul here. Code is 1234.",
+      "I can't pay the full 8,499. Can I pay 5,000 today and the rest next week?"
+    ],
+    "expected_behavior": "Agent accepts the partial payment offer. Captures partial amount (₹5,000) and date for today, plus remaining balance commitment for next week. Calls log_promise_to_pay with partial amount. Sends payment link. May suggest follow-up for remaining balance.",
+    "expected_tool_calls": [
+      {
+        "name": "verify_customer",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "verification_code": "1234"
+        }
+      },
+      {
+        "name": "log_promise_to_pay",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "ptp_date": "2026-08-12",
+          "amount": 5000
+        }
+      },
+      {
+        "name": "send_payment_link",
+        "parameters": {
+          "account_id": "ACC-88392",
+          "channel": "SMS"
+        }
+      }
+    ],
+    "pass_criteria": "Partial payment accepted without pressure for full amount. Correct partial amount logged. Payment link sent. Agent notes remaining balance.",
+    "compliance_check": "RBI Fair Practices — Flexible payment options, no coercion for full amount"
+  }
+]

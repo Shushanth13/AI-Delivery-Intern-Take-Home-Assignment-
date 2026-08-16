@@ -1,0 +1,159 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "verify_customer",
+      "description": "Verifies the identity of the customer before discussing any account details or debt.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The unique account ID of the customer."
+          },
+          "verification_code": {
+            "type": "string",
+            "description": "The verification code provided by the customer."
+          }
+        },
+        "required": [
+          "account_id",
+          "verification_code"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "log_promise_to_pay",
+      "description": "Logs a Promise-to-Pay (PTP) commitment from the customer.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The unique account ID of the customer."
+          },
+          "ptp_date": {
+            "type": "string",
+            "description": "The date the customer promised to pay in ISO-8601 format."
+          },
+          "amount": {
+            "type": "number",
+            "description": "The amount the customer has promised to pay."
+          }
+        },
+        "required": [
+          "account_id",
+          "ptp_date",
+          "amount"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "send_payment_link",
+      "description": "Sends a payment link to the customer.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The unique account ID of the customer."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "WhatsApp",
+              "BOTH"
+            ],
+            "description": "The channel through which the payment link should be sent."
+          }
+        },
+        "required": [
+          "account_id",
+          "channel"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "escalate_to_agent",
+      "description": "Escalates the call to a human agent or resolution desk.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The unique account ID of the customer."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "HARDSHIP_REQUEST",
+              "DISPUTE",
+              "SUPERVISOR_REQUEST",
+              "AUTH_FAILURE",
+              "ABUSIVE_CALLER"
+            ],
+            "description": "The reason for escalating to a human agent."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes or details regarding the escalation."
+          }
+        },
+        "required": [
+          "account_id",
+          "reason"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "mark_disposition",
+      "description": "Logs the outcome or final status of the call.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The unique account ID of the customer."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PTP_AGREED",
+              "ALREADY_PAID",
+              "DISPUTED",
+              "HARDSHIP_ESCALATED",
+              "WRONG_PERSON",
+              "DO_NOT_CALL",
+              "NO_RESPONSE",
+              "CALLBACK_REQUESTED",
+              "ABUSIVE_CALLER",
+              "AUTH_FAILED"
+            ],
+            "description": "The outcome disposition status of the call."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes or details regarding the disposition."
+          }
+        },
+        "required": [
+          "account_id",
+          "status"
+        ]
+      }
+    }
+  }
+]
