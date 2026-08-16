@@ -2,7 +2,7 @@
 
 > An intelligent, compliance-first voice AI agent for automated outbound debt collections, built for the Indian lending market.
 
-## 📖 Overview
+## Overview
 
 **Maya** is an automated outbound collections voice agent built for **Kapture Finance**. She handles the delicate process of debt recovery — professionally, empathetically, and in strict compliance with RBI Fair Practices Code.
 
@@ -10,11 +10,11 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🔒 **State-Enforced Auth** | Identity verification via `verify_customer` tool MUST succeed before any debt is disclosed. Not prompt-discretionary — enforced at the tool-call level. |
-| 💰 **PTP Collection** | Negotiates Promise-to-Pay commitments, logs them via `log_promise_to_pay`, and dispatches payment links via `send_payment_link`. |
-| 🛡️ **Compliance Guardrails** | Handles DNC opt-out, disputes, hardship claims, third-party disclosure prevention, and abusive caller protocols. |
-| 🌐 **Bilingual Support** | Seamlessly switches between English, Hindi, and Hinglish mid-conversation. |
-| 📊 **Full Disposition Logging** | Every call ends with a `mark_disposition` tool call logging the outcome. |
+| **State-Enforced Auth** | Identity verification via `verify_customer` tool MUST succeed before any debt is disclosed. Not prompt-discretionary — enforced at the tool-call level. |
+| **PTP Collection** | Negotiates Promise-to-Pay commitments, logs them via `log_promise_to_pay`, and dispatches payment links via `send_payment_link`. |
+| **Compliance Guardrails** | Handles DNC opt-out, disputes, hardship claims, third-party disclosure prevention, and abusive caller protocols. |
+| **Bilingual Support** | Seamlessly switches between English, Hindi, and Hinglish mid-conversation. |
+| **Full Disposition Logging** | Every call ends with a `mark_disposition` tool call logging the outcome. |
 
 ### Architecture Pipeline
 
