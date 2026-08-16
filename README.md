@@ -230,8 +230,3 @@ curl -X POST http://localhost:3000/webhook ^
 | **Auth Success Rate** | >85% | Successful identity verifications |
 
 
----
-
-## 📜 License
-
-MIT License
