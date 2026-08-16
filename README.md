@@ -1,15 +1,6 @@
-# 📞 Kapture Finance — Voice AI Collections Agent ("Maya")
+# Kapture Finance — Voice AI Collections Agent ("Maya")
 
 > An intelligent, compliance-first voice AI agent for automated outbound debt collections, built for the Indian lending market.
-
-![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
-![Vapi](https://img.shields.io/badge/Vapi.ai-000000?style=for-the-badge)
-![OpenAI GPT-4o](https://img.shields.io/badge/OpenAI_GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white)
-![Deepgram](https://img.shields.io/badge/Deepgram_Nova--2-1A1A1A?style=for-the-badge)
-![ElevenLabs](https://img.shields.io/badge/ElevenLabs_TTS-000000?style=for-the-badge)
-
----
 
 ## 📖 Overview
 
@@ -39,7 +30,7 @@ Customer ← Telephony (SIP/PSTN) ← → Vapi Engine ← → Deepgram Nova-2 (S
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 kapture-collections-voicebot/
@@ -62,7 +53,7 @@ kapture-collections-voicebot/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - **Node.js v18+** installed
@@ -101,7 +92,7 @@ npm run dev
 
 ---
 
-## ⚙️ Vapi Setup Guide
+## Vapi Setup Guide
 
 Follow these steps to configure the voice assistant in the Vapi Dashboard:
 
@@ -127,7 +118,7 @@ For each tool in `tool_definitions.json`, go to the **Tools** tab in your Vapi a
 
 ---
 
-## 🧠 Design Choices & Rationale
+## Design Choices & Rationale
 
 ### Why GPT-4o (not GPT-4o-mini)?
 Superior function calling reliability and instruction-following accuracy for compliance-critical scenarios. Temperature set to `0.1` for deterministic, predictable behavior — essential when a wrong word before auth could violate regulations.
@@ -146,7 +137,7 @@ Lightweight, universally understood, and fast to develop for a proof-of-concept.
 
 ---
 
-## 🐛 Debugging Notes
+## Debugging Notes
 
 ### Common Issues & Fixes
 
@@ -161,7 +152,7 @@ Lightweight, universally understood, and fast to develop for a proof-of-concept.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Evaluation Matrix
 See `tests/test_cases.json` for 14 comprehensive test scenarios covering:
@@ -211,7 +202,7 @@ curl -X POST http://localhost:3000/webhook ^
 
 ---
 
-## 🔮 What I'd Improve with More Time
+## What I'd Improve with More Time
 
 1. **Real Database** — PostgreSQL/MongoDB for disposition logging, customer records, and call history
 2. **Dynamic Customer Loading** — `get_account_details` API to load customer context dynamically instead of hardcoding
@@ -226,7 +217,7 @@ curl -X POST http://localhost:3000/webhook ^
 
 ---
 
-## 📊 Evaluation Metrics
+## Evaluation Metrics
 
 | Metric | Target | Description |
 |--------|--------|-------------|
@@ -238,16 +229,6 @@ curl -X POST http://localhost:3000/webhook ^
 | **Drop Rate** | <10% | Calls dropped before disposition logged |
 | **Auth Success Rate** | >85% | Successful identity verifications |
 
----
-
-## 📋 Demo Checklist
-
-When recording your demo video (2–4 minutes via Loom/OBS), demonstrate:
-
-- [ ] **Scenario 1 — Happy Path PTP:** Greeting → Auth (code: 1234) → Debt Disclosure → PTP commitment → Payment link sent → Graceful close
-- [ ] **Scenario 2 — Edge Case:** Pick one: Already Paid / Dispute / DNC / Wrong Person
-- [ ] **Show server logs** in terminal confirming tool calls are received and processed
-- [ ] **Show Vapi dashboard** with assistant configuration
 
 ---
 
